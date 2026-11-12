@@ -13,8 +13,10 @@ on:
 # Определяем все шаги, которые должны быть выполнены в рамках работы с тестами
 jobs:
   run-tests:
-    runs-on: ubuntu-24.04 # Указываем, что тесты будут запускаться на последней версии Ubuntu
+    runs-on: ubuntu-24.04
 
+    env:
+      HEADLESS: "true"
     steps:
       # 1. Шаг, который будет клонировать ваш репозиторий на машину GitHub Actions
       - name: Check out repository

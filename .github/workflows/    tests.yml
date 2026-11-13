@@ -1,125 +1,80 @@
 name: UI tests
-
 on:
-
   push:
-
     branches:
-
       - main
-
   pull_request:
-
     branches:
-
       - main
 
 permissions:
-
   contents: write
 
 jobs:
-
   # JOB 1 — Запуск автотестов
-
   run-tests:
-
     runs-on: ubuntu-24.04
-
     env:
-
       HEADLESS: "true"
-
     steps:
-
       # 1. Клонируем репозиторий
-
       - name: Check out repository
-
         uses: actions/checkout@v4
-
       # 2. Устанавливаем Python
-
       - name: Set up Python
-
         uses: actions/setup-python@v4
-
         with:
-
           python-version: '3.11'
-
       # 3. Устанавливаем зависимости
-
       - name: Install dependencies
-
         run: |
-
           python -m pip install --upgrade pip
-
           pip install -r requirements.txt
-
           playwright install --with-deps
-
       # 4. Запускаем автотесты
-
       - name: Run Playwright tests with pytest
-
         run: |
-
           pytest -m regression --alluredir=allure-results --numprocesses 2
-
-      # 5. Сохраняем результаты тестирования
-
+      # 5. Сохраняем результаты
       - name: Upload Allure results
-
         uses: actions/upload-artifact@v4
-
         with:
-
           name: allure-results
-
           path: allure-results
-
           if-no-files-found: error
 
-  # JOB 2 — Генерация и публикация Allure-отчёта
-
+  # JOB 2 — Генерация и публикация отчёта
   publish-report:
-    if: always()
-    needs: [ run-tests ]
+    needs: run-tests
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Check out repository
+      # 1. Получаем предыдущие отчёты
+      - name: Get Allure history
         uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: gh-pages
-
+      # 2. Загружаем результаты тестов
       - name: Download Allure results
         uses: actions/download-artifact@v4
         with:
           name: allure-results
           path: allure-results
-
+      # 3. Генерируем Allure-отчёт
       - name: Generate Allure Report with history
-
         uses: simple-elf/allure-report-action@v1.7
-
         with:
-
           allure_results: allure-results
-
           allure_history: allure-history
-
-          gh_pages:
-            gh-pages
-
-      - name: Deploy report to Github Pages
-        if: always()
+          gh_pages: gh-pages
+      # 4. Проверяем, что отчёт создан
+      - name: Check Allure report directory
+        run: |
+          ls -la allure-history
+      # 5. Публикуем отчёт
+      - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir:
-            allure-history
+          publish_dir: allure-history

@@ -85,61 +85,35 @@ jobs:
   # JOB 2 — Генерация и публикация Allure-отчёта
 
   publish-report:
-
-    runs-on: ubuntu-24.04
-
-    needs: run-tests
+    if: always()
+    needs: [ run-tests ]
+    runs-on: ubuntu-latest
 
     steps:
-
-      # 1. Загружаем результаты первой джобы
-
-      - name: Download Allure results
-
-        uses: actions/download-artifact@v4
-
-        with:
-
-          name: allure-results
-
-          path: allure-results
-
-      # 2. Получаем историю предыдущих отчётов
-
-      - name: Get Allure history
-
+      - name: Check out repository
         uses: actions/checkout@v4
-
-        continue-on-error: true
-
         with:
-
           ref: gh-pages
-
           path: gh-pages
 
-      # 3. Генерируем Allure-отчёт
-
-      - name: Generate Allure Report with history
-
-        uses: simple-elf/allure-report-action@v1.7
-
+      - name: Download Allure results
+        uses: actions/download-artifact@v4
         with:
+          name: allure-results
+          path: allure-results
 
+      - name: Generates Allure Report with history
+        uses: simple-elf/allure-report-action@v1.7
+        if: always()
+        with:
           allure_results: allure-results
-
           allure_history: allure-history
 
-      # 4. Публикуем отчёт на GitHub Pages
-
-      - name: Deploy report to GitHub Pages
-
+      - name: Deploy report to Github Pages
+        if: always()
         uses: peaceiris/actions-gh-pages@v4
-
         with:
-
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
           publish_branch: gh-pages
-
-          publish_dir: allure-history
+          publish_dir:
+            allure-history
